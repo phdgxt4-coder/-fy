@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en" translate="no" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="google" content="notranslate">
+<meta http-equiv="Content-Language" content="en">
+<title>SYSTEM TERMINAL</title>
+<style>
+:root{--bg:#010805;--g:#2dff7a;--g2:#12a550;--dim:#0a3a1d;--cy:#35e0ff}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--bg);color:var(--g);font-family:"Courier New",ui-monospace,monospace}
+body{min-height:100dvh}
+#rain{position:fixed;inset:0;width:100%;height:100%;opacity:.17;z-index:0}
+body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:8;background:repeating-linear-gradient(0deg,rgba(0,0,0,.16) 0 1px,transparent 1px 3px),radial-gradient(ellipse at center,transparent 55%,rgba(0,0,0,.65))}
+main{position:relative;z-index:2;display:grid;gap:12px;grid-template-columns:1fr 1.2fr 1fr;grid-template-rows:auto 1fr auto;height:100dvh;padding:clamp(10px,2vw,22px)}
+header{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;gap:10px}
+.glitch{position:relative;display:inline-block;font-size:clamp(20px,3.6vw,38px);font-weight:700;letter-spacing:.14em;text-shadow:0 0 12px rgba(45,255,122,.7),0 0 34px rgba(45,255,122,.3)}
+.glitch::before,.glitch::after{content:attr(data-text);position:absolute;left:0;top:0;width:100%;overflow:hidden}
+.glitch::before{color:var(--cy);clip-path:inset(0 0 58% 0);animation:g1 4s infinite steps(1)}
+.glitch::after{color:#ff3d6e;clip-path:inset(58% 0 0 0);animation:g2 4s infinite steps(1)}
+@keyframes g1{0%,90%,100%{transform:none}92%{transform:translate(-4px,1px)}96%{transform:translate(3px,0)}}
+@keyframes g2{0%,88%,100%{transform:none}91%{transform:translate(4px,-1px)}95%{transform:translate(-3px,1px)}}
+#clock{font-size:clamp(13px,1.8vw,18px);text-shadow:0 0 8px var(--g);white-space:nowrap}
+.col{display:flex;flex-direction:column;gap:12px;min-height:0;min-width:0}
+.panel{position:relative;border:1px solid var(--dim);background:rgba(1,12,6,.78);padding:10px 12px;min-width:0;box-shadow:inset 0 0 22px rgba(45,255,122,.05)}
+.panel::before,.panel::after{content:"";position:absolute;width:10px;height:10px;border:2px solid var(--g);opacity:.8}
+.panel::before{top:-1px;left:-1px;border-right:0;border-bottom:0}
+.panel::after{bottom:-1px;right:-1px;border-left:0;border-top:0}
+.panel h2{font-size:11px;font-weight:400;color:var(--g2);margin-bottom:8px;letter-spacing:.12em}
+.grow{flex:1;min-height:0;overflow:hidden}
+#term{font-size:clamp(12px,1.35vw,15px);line-height:1.8;text-shadow:0 0 8px rgba(45,255,122,.6)}
+#term div{white-space:nowrap;overflow:hidden}
+.cur{display:inline-block;width:.6em;height:1.05em;background:var(--g);vertical-align:-.15em;box-shadow:0 0 10px var(--g);animation:bl 1s steps(1) infinite}
+@keyframes bl{50%{opacity:0}}
+#log{font-size:11px;line-height:1.65;color:var(--g2);white-space:nowrap;overflow:hidden}
+#log b{color:var(--cy);font-weight:400}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:3px 12px;font-size:12px}
+.kv span:nth-child(odd){color:var(--g2)}
+.kv span:nth-child(even){text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.meters{font-size:clamp(11px,1.3vw,14px);line-height:1.75;white-space:nowrap;text-shadow:0 0 8px rgba(45,255,122,.5)}
+.center{align-items:center;justify-content:center;display:flex;position:relative}
+#globe{display:block;width:100%;height:100%}
+#net{display:block;width:100%;height:100%}
+.netp{display:flex;flex-direction:column;min-height:90px}
+.netp canvas{flex:1;min-height:0}
+footer{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;font-size:clamp(11px,1.4vw,14px);text-shadow:0 0 8px rgba(45,255,122,.6)}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--g);box-shadow:0 0 12px var(--g);margin-right:6px;animation:bl 1.4s steps(1) infinite}
+#mute:focus-visible{outline:2px solid var(--cy);outline-offset:4px}
+#out{position:fixed;inset:0;z-index:40;background:#000;opacity:0;pointer-events:none;transition:opacity .7s}
+#out.on{opacity:1;pointer-events:auto}
+#mute{position:fixed;right:10px;bottom:8px;z-index:10;font:inherit;font-size:10px;color:var(--g2);background:rgba(1,8,5,.8);border:1px solid var(--dim);padding:3px 7px;cursor:pointer}
+.flash{animation:fl .9s}
+@keyframes fl{0%{box-shadow:inset 0 0 0 0 rgba(45,255,122,0)}20%{box-shadow:inset 0 0 120px 10px rgba(45,255,122,.45)}100%{box-shadow:inset 0 0 0 0 rgba(45,255,122,0)}}
+@media(max-width:900px){
+  main{height:auto;grid-template-columns:1fr;grid-template-rows:none}
+  .center{height:min(92vw,440px)}
+  .netp{height:180px}
+  .grow{overflow:visible}
+}
+@media(prefers-reduced-motion:reduce){.glitch::before,.glitch::after,.cur,.dot{animation:none}}
+</style>
+</head>
+<body class="notranslate" translate="no">
+<canvas id="rain" aria-hidden="true"></canvas>
+
+<main id="root">
+  <header>
+    <h1 class="glitch" data-text="SYSTEM TERMINAL">SYSTEM TERMINAL</h1>
+    <div id="clock">00:00:00</div>
+  </header>
+
+  <div class="col">
+    <section class="panel"><h2>BOOT SEQUENCE</h2><div id="term"></div></section>
+    <section class="panel grow"><h2>PACKET STREAM</h2><div id="log"></div></section>
+  </div>
+
+  <section class="panel center" aria-label="Global network"><canvas id="globe"></canvas></section>
+
+  <div class="col">
+    <section class="panel"><h2>CLIENT</h2><div class="kv" id="info"></div></section>
+    <section class="panel"><h2>SYSTEM MONITOR</h2><div class="meters" id="meters"></div></section>
+    <section class="panel netp grow"><h2>NETWORK GRAPH</h2><canvas id="net"></canvas></section>
+  </div>
+
+  <footer>
+    <div><span class="dot"></span>STATUS : SECURE</div>
+    <div>ENCRYPTION : ACTIVE</div>
+    <div>NETWORK : READY</div>
+  </footer>
+</main>
+<div id="out" aria-hidden="true"></div>
+<button id="mute" aria-pressed="false">SOUND ON</button>
+
+<script>
+// ===== الإعدادات =====
+const DASHBOARD_URL = "portfolio.html"; // صفحة معرض أعمالك (بتفتح لوحدها بعد ACCESS GRANTED)
+const AUTO_REDIRECT_MS = 4000;          // الوقت بين ACCESS GRANTED والتحويل (بالمللي ثانية)
+// =====================
+const $=id=>document.getElementById(id);
+const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const pad=n=>String(n).padStart(2,"0");
+
+/* ---------- Audio ---------- */
+let ac,master,muted=false;
+function initAudio(){
+  ac=new(window.AudioContext||window.webkitAudioContext)();
+  master=ac.createGain();master.connect(ac.destination);
+  const lp=ac.createBiquadFilter();lp.type="lowpass";lp.frequency.value=170;
+  const hg=ac.createGain();hg.gain.value=0;hg.gain.linearRampToValueAtTime(.05,ac.currentTime+3);
+  [55,55.6,82.4].forEach(f=>{const o=ac.createOscillator();o.type="sawtooth";o.frequency.value=f;o.connect(lp);o.start()});
+  lp.connect(hg);hg.connect(master);
+}
+function tone(f,d,type="square",v=.02,when=0){
+  if(!ac||ac.state!=="running")return;const t=ac.currentTime+when,o=ac.createOscillator(),g=ac.createGain();
+  o.type=type;o.frequency.value=f;g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(.0001,t+d);
+  o.connect(g);g.connect(master);o.start(t);o.stop(t+d);
+}
+const blip=()=>tone(900+Math.random()*500,.03);
+const tick=()=>tone(320,.015,"square",.008);
+const okTone=()=>{tone(660,.12,"sine",.05);tone(990,.18,"sine",.05,.1)};
+const grant=()=>[523,659,784,1047].forEach((f,i)=>tone(f,.35,"sine",.06,i*.09));
+$("mute").onclick=()=>{muted=!muted;if(master)master.gain.value=muted?0:1;$("mute").textContent=muted?"SOUND OFF":"SOUND ON";$("mute").setAttribute("aria-pressed",muted)};
+
+/* ---------- Matrix rain ---------- */
+(function(){
+  const c=$("rain"),x=c.getContext("2d");let w,h,d;
+  const ch="01<>/{}[]$#%=+*".split("");
+  function rs(){w=c.width=innerWidth;h=c.height=innerHeight;d=Array(Math.ceil(w/16)).fill(0).map(()=>Math.random()*-60)}
+  rs();addEventListener("resize",rs);
+  setInterval(()=>{
+    x.fillStyle="rgba(1,8,5,.14)";x.fillRect(0,0,w,h);x.fillStyle="#2dff7a";x.font="14px monospace";
+    d.forEach((v,i)=>{x.fillText(ch[Math.random()*ch.length|0],i*16,v*16);d[i]=v*16>h&&Math.random()>.975?0:v+1});
+  },reduce?220:60);
+})();
+
+/* ---------- Rotating Earth with live connections ---------- */
+(function(){
+  const c=$("globe"),x=c.getContext("2d");let S,R;
+  function rs(){const p=c.parentElement,r=devicePixelRatio||1;
+    S=Math.max(220,Math.min(p.clientWidth-24,p.clientHeight-24));
+    c.style.width=c.style.height=S+"px";c.width=c.height=S*r;x.setTransform(r,0,0,r,0,0);R=S*.42}
+  rs();addEventListener("resize",rs);
+  const poly=[
+   [[-168,66],[-140,70],[-95,72],[-60,60],[-55,47],[-80,25],[-97,18],[-83,9],[-105,22],[-125,40],[-135,58]],
+   [[-80,10],[-60,10],[-35,-6],[-40,-23],[-58,-38],[-68,-54],[-75,-45],[-71,-18],[-81,-5]],
+   [[-10,36],[-9,44],[0,50],[5,58],[20,70],[40,68],[40,45],[28,41],[15,38]],
+   [[-17,21],[-6,36],[32,31],[43,12],[51,11],[40,-15],[32,-30],[18,-34],[12,-17],[9,4],[-17,14]],
+   [[40,45],[40,68],[100,78],[180,68],[142,50],[122,30],[110,18],[100,2],[80,8],[72,20],[57,25],[36,30]],
+   [[114,-22],[130,-12],[142,-11],[153,-27],[146,-39],[115,-34]]];
+  const inside=(p,X,Y)=>{let r=false;for(let i=0,j=p.length-1;i<p.length;j=i++){
+    const[a,b]=p[i],[c2,d]=p[j];if((b>Y)!=(d>Y)&&X<(c2-a)*(Y-b)/(d-b)+a)r=!r}return r};
+  const D=Math.PI/180,vec=(lo,la)=>[Math.cos(la*D)*Math.sin(lo*D),Math.sin(la*D),Math.cos(la*D)*Math.cos(lo*D)];
+  const land=[];
+  for(let la=-70;la<=80;la+=3)for(let lo=-180;lo<180;lo+=3/Math.max(.35,Math.cos(la*D)))
+    if(poly.some(p=>inside(p,lo,la)))land.push(vec(lo,la));
+  const city=[[-74,40],[-0.1,51],[31,30],[55,25],[77,28],[116,40],[139,35],[-46,-23],[151,-33],[18,-33],[-122,37],[103,1]].map(a=>vec(...a));
+  const arcs=Array.from({length:10},()=>({a:0,b:0,t:Math.random()}));
+  const pick=a=>{a.a=Math.random()*city.length|0;do{a.b=Math.random()*city.length|0}while(a.b===a.a)};
+  arcs.forEach(pick);
+  let rot=0;const tilt=.42,ct=Math.cos(tilt),st=Math.sin(tilt);
+  function tr(v,lift=1){const cr=Math.cos(rot),sr=Math.sin(rot);
+    const X=(v[0]*cr+v[2]*sr)*lift,Z0=(-v[0]*sr+v[2]*cr)*lift,Y0=v[1]*lift;
+    const Y=Y0*ct-Z0*st,Z=Y0*st+Z0*ct;return[S/2+X*R,S/2-Y*R,Z]}
+  function frame(){
+    x.clearRect(0,0,S,S);rot+=reduce?0:.0035;
+    // atmosphere
+    const gr=x.createRadialGradient(S/2,S/2,R*.9,S/2,S/2,R*1.18);gr.addColorStop(0,"rgba(45,255,122,.16)");gr.addColorStop(1,"rgba(45,255,122,0)");
+    x.fillStyle=gr;x.beginPath();x.arc(S/2,S/2,R*1.18,0,7);x.fill();
+    x.strokeStyle="rgba(45,255,122,.35)";x.lineWidth=1;x.beginPath();x.arc(S/2,S/2,R,0,7);x.stroke();
+    // latitude rings
+    x.strokeStyle="rgba(45,255,122,.07)";
+    for(let la=-60;la<=60;la+=30){x.beginPath();let f=1;for(let lo=-180;lo<=180;lo+=6){const p=tr(vec(lo,la));if(p[2]>0){f?x.moveTo(p[0],p[1]):x.lineTo(p[0],p[1]);f=0}else f=1}x.stroke()}
+    // land dots
+    land.forEach(v=>{const p=tr(v);if(p[2]>0){x.fillStyle=`rgba(45,255,122,${.12+.6*p[2]})`;x.fillRect(p[0],p[1],1.8,1.8)}});
+    // arcs
+    arcs.forEach(a=>{
+      a.t+=.005;if(a.t>1.15){a.t=0;pick(a)}
+      const A=city[a.a],B=city[a.b],w=Math.acos(Math.max(-1,Math.min(1,A[0]*B[0]+A[1]*B[1]+A[2]*B[2]))),sw=Math.sin(w)||1;
+      const at=t=>{const k1=Math.sin((1-t)*w)/sw,k2=Math.sin(t*w)/sw,lf=1+.28*Math.sin(Math.PI*t);
+        return tr([A[0]*k1+B[0]*k2,A[1]*k1+B[1]*k2,A[2]*k1+B[2]*k2],lf)};
+      x.strokeStyle="rgba(53,224,255,.45)";x.lineWidth=1;x.beginPath();let f=1;
+      for(let t=0;t<=Math.min(a.t,1);t+=.04){const p=at(t);if(p[2]>-.05){f?x.moveTo(p[0],p[1]):x.lineTo(p[0],p[1]);f=0}else f=1}x.stroke();
+      if(a.t<=1){const p=at(a.t);if(p[2]>0){x.shadowColor="#35e0ff";x.shadowBlur=10;x.fillStyle="#bff6ff";x.beginPath();x.arc(p[0],p[1],2.4,0,7);x.fill();x.shadowBlur=0}}
+    });
+    // city nodes
+    const pu=(Date.now()/700)%1;
+    city.forEach(v=>{const p=tr(v);if(p[2]>0){x.shadowColor="#2dff7a";x.shadowBlur=8;x.fillStyle="#7dffad";x.beginPath();x.arc(p[0],p[1],2.6,0,7);x.fill();x.shadowBlur=0;
+      x.strokeStyle=`rgba(45,255,122,${.7*(1-pu)})`;x.beginPath();x.arc(p[0],p[1],3+pu*11,0,7);x.stroke()}});
+    requestAnimationFrame(frame);
+  }
+  frame();
+})();
+
+/* ---------- Network graph ---------- */
+(function(){
+  const c=$("net"),x=c.getContext("2d");let W,H,n=[];
+  function rs(){const p=c.parentElement,r=devicePixelRatio||1;W=p.clientWidth-24;H=Math.max(60,p.clientHeight-38);
+    c.style.width=W+"px";c.style.height=H+"px";c.width=W*r;c.height=H*r;x.setTransform(r,0,0,r,0,0);
+    n=Array.from({length:24},()=>({x:Math.random()*W,y:Math.random()*H,vx:(Math.random()-.5)*.5,vy:(Math.random()-.5)*.5}))}
+  setTimeout(rs,0);addEventListener("resize",rs);
+  function frame(){
+    x.clearRect(0,0,W,H);
+    n.forEach(a=>{a.x+=a.vx;a.y+=a.vy;if(a.x<0||a.x>W)a.vx*=-1;if(a.y<0||a.y>H)a.vy*=-1});
+    for(let i=0;i<n.length;i++)for(let j=i+1;j<n.length;j++){const d=Math.hypot(n[i].x-n[j].x,n[i].y-n[j].y);
+      if(d<95){x.strokeStyle=`rgba(53,224,255,${.55-d/180})`;x.beginPath();x.moveTo(n[i].x,n[i].y);x.lineTo(n[j].x,n[j].y);x.stroke()}}
+    x.fillStyle="#2dff7a";n.forEach(a=>{x.beginPath();x.arc(a.x,a.y,2.4,0,7);x.fill()});
+    requestAnimationFrame(frame);
+  }
+  frame();
+})();
+
+/* ---------- Clock, client info, meters ---------- */
+function clock(){const d=new Date();$("clock").textContent=pad(d.getHours())+":"+pad(d.getMinutes())+":"+pad(d.getSeconds())}
+clock();setInterval(clock,1000);
+function browser(){const u=navigator.userAgent;return /Edg\//.test(u)?"Edge":/OPR\//.test(u)?"Opera":/Firefox\//.test(u)?"Firefox":/Chrome\//.test(u)?"Chrome":/Safari\//.test(u)?"Safari":"Unknown"}
+$("info").innerHTML=[["BROWSER",browser()],["DISPLAY",screen.width+"x"+screen.height],["LANG",navigator.language],["ZONE",Intl.DateTimeFormat().resolvedOptions().timeZone||"-"]]
+  .map(r=>`<span>${r[0]}</span><span>${r[1]}</span>`).join("");
+const m={CPU:60,RAM:42,NET:80};
+const bar=v=>{const n=Math.round(v/10);return"▓".repeat(n)+"░".repeat(10-n)};
+function meters(){for(const k in m)m[k]=Math.max(18,Math.min(97,m[k]+(Math.random()-.5)*22));
+  $("meters").innerHTML=Object.keys(m).map(k=>`${k} ${bar(m[k])} ${String(Math.round(m[k])).padStart(2," ")}%`).join("<br>")}
+meters();setInterval(meters,1100);
+
+/* ---------- Packet stream ---------- */
+const log=$("log"),rnd=n=>Math.random()*n|0;
+const ip=()=>["10."+rnd(255)+"."+rnd(255)+"."+rnd(255),"172.16."+rnd(255)+"."+rnd(255),"192.168."+rnd(255)+"."+rnd(255)][rnd(3)];
+const proto=["TLS1.3","AES-256","SSH","QUIC","WG"];
+let rows=[];
+function packet(){
+  rows.push(`<b>[${pad(new Date().getMinutes())}:${pad(new Date().getSeconds())}]</b> ${ip()} &gt; ${ip()} ${proto[rnd(5)]} OK`);
+  const max=Math.max(5,Math.floor((log.parentElement.clientHeight-30)/18)||6);
+  if(rows.length>max)rows=rows.slice(-max);
+  log.innerHTML=rows.join("<br>");
+  if(started)tick();
+}
+setInterval(packet,650);
+
+/* ---------- Boot sequence ---------- */
+const lines=[
+  "> Booting secure environment...",
+  "> Loading modules...",
+  "> Establishing encrypted channel...",
+  "> Network ready",
+  "> Encryption active",
+  "> System online",
+  "> ACCESS GRANTED"];
+async function run(){
+  const term=$("term"),cur=document.createElement("span");cur.className="cur";
+  for(let i=0;i<lines.length;i++){
+    const row=document.createElement("div");term.appendChild(row);row.appendChild(cur);
+    for(const ch of lines[i]){cur.before(ch);if(ch!==" ")blip();await sleep(reduce?3:24)}
+    if(i===lines.length-1){grant();$("root").classList.add("flash")}else okTone();
+    await sleep(reduce?20:280);
+  }
+  await sleep(reduce?300:AUTO_REDIRECT_MS);
+  $("out").classList.add("on");
+  await sleep(750);
+  location.href=DASHBOARD_URL;
+}
+
+/* ---------- Start: boot immediately. Sound plays right away if the browser allows it,
+   otherwise it switches on at the visitor's first tap/click/key (no prompt shown). ---------- */
+let started=true;
+try{initAudio();ac.resume().catch(()=>{})}catch(e){}
+function unlock(){if(ac&&ac.state!=="running")ac.resume().catch(()=>{})}
+["pointerdown","touchstart","touchend","click","keydown"].forEach(e=>addEventListener(e,unlock,{passive:true}));
+document.addEventListener("visibilitychange",unlock);
+run();
+</script>
+</body>
+</html>
